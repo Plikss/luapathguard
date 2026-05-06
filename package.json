@@ -9,13 +9,23 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "workspaceContains:**/*.project.json"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "luapathguard.helloWorld",
-        "title": "Hello World"
+        "command": "luapathguard.reloadSourceMap",
+        "title": "LuaPathGuard: Reload Source Map"
+      },
+      {
+        "command": "luapathguard.enable",
+        "title": "LuaPathGuard: Enable"
+      },
+      {
+        "command": "luapathguard.disable",
+        "title": "LuaPathGuard: Disable"
       }
     ],
     "configuration": {
@@ -28,8 +38,15 @@
         },
         "luapathguard.excludeFolders": {
           "type": "array",
-          "items": { "type": "string" },
-          "default": ["node_modules", ".git", "dist", "out"],
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "node_modules",
+            ".git",
+            "dist",
+            "out"
+          ],
           "description": "Folders to exclude when searching for require references."
         },
         "luapathguard.renameRequireVariable": {
