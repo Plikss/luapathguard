@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { FetchSourceMap, ProcessEdits, RojoProject } from './PathMaker';
+import { FetchSourceMap, ProcessEdits, RojoProject } from './PathResolver';
 
 let statusBarItem: vscode.StatusBarItem;
 let content: RojoProject | undefined;
