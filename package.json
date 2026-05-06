@@ -6,7 +6,7 @@
   "repository": {
     "url": "https://github.com/Plikss/luapathguard"
   },
-  "publisher": "Plikss",
+  "publisher": "plikss",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.118.0"
