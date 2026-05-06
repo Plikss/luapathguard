@@ -43,6 +43,8 @@ Everything happens before the rename completes, so your workspace never enters a
 |---|---|---|---|
 | `luapathguard.autoUpdate` | `boolean` | `true` | Automatically update require paths on rename/move |
 | `luapathguard.renameRequireVariable` | `boolean` | `true` | Also rename the local variable holding the require |
+| `luapathguard.autoSave` | `boolean` | `true` | Automatically save files after updating require paths |
+| `luapathguard.openChangedFiles` | `boolean` | `false` | Open updated files in the editor after path changes |
 | `luapathguard.excludeFolders` | `string[]` | `["node_modules", ".git", "dist", "out"]` | Folders to skip when searching for require statements |
 
 ---
@@ -72,6 +74,10 @@ The status bar item in the bottom-right corner shows the current state:
 ---
 
 ## Release Notes
+
+### 2.0.0
+
+Added `autoSave` and `openChangedFiles` settings. Require-path updates now save files automatically and can optionally open them in the editor.
 
 ### 0.0.1
 

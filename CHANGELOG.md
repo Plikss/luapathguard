@@ -4,9 +4,7 @@ All notable changes to the "luapathguard" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
-
-## [0.0.2] - 2026-05-06
+## [2.0.0] - 2026-05-06
 
 ### Added
 - `luapathguard.autoSave` setting (default: `true`) — saves edited files automatically after updating require paths, no manual Ctrl+S needed.
@@ -21,7 +19,5 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Automatically updates `require()` paths in all Lua/Luau files when a file is renamed or moved in a Rojo project.
 - Optionally renames the local variable holding the require to match the new file name (`luapathguard.renameRequireVariable`, default: `true`).
 - Automatically inserts missing `game:GetService()` declarations when a require path moves into a new service scope.
-- `luapathguard.autoSave` setting (default: `true`) — saves edited files automatically so no manual Ctrl+S is required.
-- `luapathguard.openChangedFiles` setting (default: `false`) — optionally opens edited files in the editor after updating their require paths.
 - `luapathguard.excludeFolders` setting to skip specified directories when searching for require references.
 - Commands: `LuaPathGuard: Enable`, `LuaPathGuard: Disable`, `LuaPathGuard: Reload Source Map`.
