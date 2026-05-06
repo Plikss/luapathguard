@@ -1,7 +1,10 @@
 {
   "name": "luapathguard",
   "displayName": "LuaPathGuard",
-  "description": "Automatically fixing require path when moving scripts",
+  "description": "Automatically updates Lua require() paths when renaming or moving files in Rojo projects.",
+  "repository": {
+    "url": "https://github.com/Plikss/luapathguard"
+  },
   "publisher": "Plikss",
   "version": "0.0.1",
   "engines": {
