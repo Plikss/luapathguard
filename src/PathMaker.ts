@@ -13,12 +13,6 @@ export interface RojoProject {
   tree: ProjectNode;
 }
 
-interface FileNode {
-  name: string;
-  type: 'file' | 'folder';
-  children?: FileNode[];
-}
-
 export async function FetchSourceMap() {
   return await vscode.workspace.findFiles('**/*.project.json');
 }
@@ -38,187 +32,164 @@ function MakePathMap(sourcemap: RojoProject): Record<string, string> {
   }
 
   traverse(sourcemap.tree, '');
-  //console.log(pathMap);
-
   return pathMap;
 }
 
-function ConvertPath(sourcemap: RojoProject, path: string) {
-  const pathMap = MakePathMap(sourcemap);
-
-  if (!pathMap || !path) {
+function ConvertPath(pathMap: Record<string, string>, filePath: string) {
+  if (!pathMap || !filePath) {
     console.log("Couldn't Map .project.json; ConvertPath");
     return;
   }
 
   for (const [rbxPath, fsPath] of Object.entries(pathMap)) {
-    let newFsPath: string = fsPath;
-    let convertedPath: string, undefined;
+    let newFsPath = fsPath.replaceAll('/', '\\');
 
-    newFsPath = newFsPath.replaceAll('/', '\\');
-
-    const distIndex = newFsPath.lastIndexOf('dist');
-    if (distIndex !== -1) {
+    if (newFsPath.lastIndexOf('dist') !== -1) {
       newFsPath = newFsPath.replace('dist', 'src');
     }
 
-    const index = path.lastIndexOf(newFsPath);
-    if (index !== -1) {
-      convertedPath = path.slice(index);
-      convertedPath = convertedPath.replace(newFsPath, rbxPath);
-      convertedPath = convertedPath.replaceAll('\\', '.');
+    const index = filePath.lastIndexOf(newFsPath);
+    if (index === -1) continue;
 
-      const lastSlash = path.lastIndexOf('\\');
-      const lastDot = path.lastIndexOf('.');
-      if (lastDot > lastSlash) {
-        convertedPath = convertedPath.slice(0, convertedPath.lastIndexOf('.'));
-      }
+    let convertedPath: string = filePath.slice(index);
+    convertedPath = convertedPath.replace(newFsPath, rbxPath).replaceAll('\\', '.');
 
-      return convertedPath;
-    } else {
-      continue;
+    const lastSlash = filePath.lastIndexOf('\\');
+    const lastDot = filePath.lastIndexOf('.');
+    if (lastDot > lastSlash) {
+      convertedPath = convertedPath.slice(0, convertedPath.lastIndexOf('.'));
     }
+
+    return convertedPath;
   }
 }
 
-function buildHierarchy(
-  dirPath: string,
-  exclude = ['node_modules', '.git', 'dist', 'out']
-): FileNode[] {
-  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-
-  return entries
-    .filter((e: any) => !exclude.includes(e.name))
-    .map((entry: any) => {
-      if (entry.isDirectory()) {
-        return {
-          name: entry.name,
-          type: 'folder' as const,
-          children: buildHierarchy(path.join(dirPath, entry.name), exclude),
-        };
-      }
-      return { name: entry.name, type: 'file' as const };
-    });
+function getConfig() {
+  return vscode.workspace.getConfiguration('luapathguard');
 }
 
-async function FechtRequires(key: string) {
-  const folders = vscode.workspace.workspaceFolders;
-
-  if (!folders) {
-    vscode.window.showWarningMessage('No workspace open.');
-    return;
-  }
-
-  const hierarchy = folders.map((folder) => ({
-    workspace: folder.name,
-    path: folder.uri.fsPath,
-    children: buildHierarchy(folder.uri.fsPath),
-  }));
-
-  const files = await vscode.workspace.findFiles('**/*', '{node_modules,.git,dist,out}/**');
+async function FetchRequires(key: string): Promise<Record<string, number[]>> {
   const output: Record<string, number[]> = {};
 
-  for (const fileUri of files) {
-    try {
-      const doc = await vscode.workspace.openTextDocument(fileUri);
-      const lines: number[] = [];
-      for (let i = 0; i < doc.lineCount; i++) {
-        if (doc.lineAt(i).text.includes(key)) {
-          lines.push(i);
-        }
-      }
-      if (lines.length > 0) {
-        output[fileUri.fsPath] = lines;
-      }
-    } catch {
-      // skip unreadable files (binaries, etc.)
+  const excludeFolders = getConfig().get<string[]>('excludeFolders', ['node_modules', '.git', 'dist', 'out']);
+  const excludeGlob = `{${excludeFolders.join(',')}}/**`;
+
+  const files = await vscode.workspace.findFiles('**/*.{lua,luau}', excludeGlob);
+
+  await Promise.all(files.map(async (fileUri) => {
+    const openDoc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === fileUri.fsPath);
+    const text = openDoc
+      ? openDoc.getText()
+      : await fs.promises.readFile(fileUri.fsPath, 'utf8');
+    const lines = text.split('\n');
+    const hits: number[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes(key)) hits.push(i);
     }
-  }
+    if (hits.length > 0) output[fileUri.fsPath] = hits;
+  }));
 
   return output;
 }
 
-async function getLine(filePath: string, lineNumber: number): Promise<string> {
-  const uri = vscode.Uri.file(filePath);
-  const document = await vscode.workspace.openTextDocument(uri);
+async function getLine(document: vscode.TextDocument, lineNumber: number): Promise<string> {
   return document.lineAt(lineNumber).text;
 }
 
-async function modifyLine(filePath: string, lineNumber: number, newText: string): Promise<void> {
-  const uri = vscode.Uri.file(filePath);
-  const document = await vscode.workspace.openTextDocument(uri);
+async function modifyLine(
+  document: vscode.TextDocument,
+  filePath: string,
+  lineNumber: number,
+  newText: string
+): Promise<void> {
   const line = document.lineAt(lineNumber);
-
   const edit = new vscode.WorkspaceEdit();
-  edit.replace(uri, line.range, newText);
-
+  edit.replace(vscode.Uri.file(filePath), line.range, newText);
   await vscode.workspace.applyEdit(edit);
-  console.log('applied edit at line:', lineNumber, ' ', filePath);
 }
 
-async function searchKeywordInFile(filePath: string, keyword: string) {
-  const uri = vscode.Uri.file(filePath);
-  const document = await vscode.workspace.openTextDocument(uri);
-
+async function searchKeywordInFile(
+  document: vscode.TextDocument,
+  keyword: string
+): Promise<boolean> {
   for (let i = 0; i < document.lineCount; i++) {
-    const line = document.lineAt(i);
-    if (line.text.includes(keyword)) {
-      console.log(`Found "${keyword}" at line ${i + 1}: ${line.text}`);
-      return true;
-    }
+    if (document.lineAt(i).text.includes(keyword)) return true;
   }
   return false;
 }
 
 async function addLineOnTop(filePath: string, newText: string): Promise<void> {
-  const uri = vscode.Uri.file(filePath);
-  const document = await vscode.workspace.openTextDocument(uri);
-
   const edit = new vscode.WorkspaceEdit();
-  const topPosition = new vscode.Position(0, 0); // line 0, character 0
-
-  edit.insert(uri, topPosition, newText + '\n');
+  edit.insert(vscode.Uri.file(filePath), new vscode.Position(0, 0), newText + '\n');
   await vscode.workspace.applyEdit(edit);
-  console.log('edit applied ', filePath);
 }
 
-export async function ProcesssEduts(content: RojoProject, event: any) {
+async function renameSymbolInFile(
+  document: vscode.TextDocument,
+  filePath: string,
+  oldName: string,
+  newName: string
+): Promise<void> {
+  const regex = new RegExp(`\\b${oldName}\\b`, 'g');
+  const edit = new vscode.WorkspaceEdit();
+
+  for (let i = 0; i < document.lineCount; i++) {
+    const line = document.lineAt(i);
+    const newText = line.text.replace(regex, newName);
+    if (newText !== line.text) {
+      edit.replace(vscode.Uri.file(filePath), line.range, newText);
+    }
+  }
+
+  await vscode.workspace.applyEdit(edit);
+}
+
+export async function ProcessEdits(content: RojoProject, event: any) {
+  const pathMap = MakePathMap(content);
+  const renameVar = getConfig().get<boolean>('renameRequireVariable', true);
+
   for (const file of event.files) {
-    const newFilePath = ConvertPath(content!, file.newUri.fsPath);
-    const oldFilePath = ConvertPath(content!, file.oldUri.fsPath);
+    const newFilePath = ConvertPath(pathMap, file.newUri.fsPath);
+    const oldFilePath = ConvertPath(pathMap, file.oldUri.fsPath);
     if (!newFilePath || !oldFilePath) {
       console.log("Couldn't convert paths; workspace.onWillRenameFiles");
       continue;
     }
-    const Fetched = await FechtRequires(oldFilePath);
-    if (!Fetched) {
-      console.log('Fetch results failed');
+
+    const Fetched = await FetchRequires(oldFilePath);
+    if (Object.keys(Fetched).length === 0) {
+      console.log('No requires found for:', oldFilePath);
       continue;
     }
+
+    const oldName = oldFilePath.split('.').pop()!;
+    const newName = newFilePath.split('.').pop()!;
 
     for (const [filePath, lineNumbers] of Object.entries(Fetched)) {
       const srcFilePath = filePath.replace(
         `${path.sep}dist${path.sep}`,
         `${path.sep}src${path.sep}`
       );
+
+      const document = await vscode.workspace.openTextDocument(vscode.Uri.file(srcFilePath));
+
       for (const lineNumber of lineNumbers) {
-        const lineText = await getLine(srcFilePath, lineNumber);
-        if (!lineText) {
-          continue;
-        }
-        let newLine = lineText;
-        newLine = newLine.replace(oldFilePath, newFilePath);
+        const lineText = await getLine(document, lineNumber);
+        if (!lineText) continue;
+
+        const newLine = lineText.replace(oldFilePath, newFilePath);
+
         for (const service in content.tree) {
-          const serviceIndex = newFilePath.indexOf(service);
-          if (serviceIndex !== -1) {
-            const serviceFinded = await searchKeywordInFile(srcFilePath, service);
-            if (!serviceFinded) {
-              console.log('service not found, adding line on top!');
-              await addLineOnTop(srcFilePath, 'local ${service} = game:GetService("${service}")');
-            }
-            await modifyLine(srcFilePath, lineNumber, newLine);
+          if (newFilePath.includes(service) && !(await searchKeywordInFile(document, service))) {
+            await addLineOnTop(srcFilePath, `local ${service} = game:GetService("${service}")`);
           }
         }
+
+        await modifyLine(document, srcFilePath, lineNumber, newLine);
+      }
+
+      if (renameVar && oldName !== newName) {
+        await renameSymbolInFile(document, srcFilePath, oldName, newName);
       }
     }
   }

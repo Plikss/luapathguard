@@ -17,7 +17,28 @@
         "command": "luapathguard.helloWorld",
         "title": "Hello World"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "LuaPathGuard",
+      "properties": {
+        "luapathguard.autoUpdate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically update require paths when a file is renamed."
+        },
+        "luapathguard.excludeFolders": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["node_modules", ".git", "dist", "out"],
+          "description": "Folders to exclude when searching for require references."
+        },
+        "luapathguard.renameRequireVariable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Also rename the local variable that holds the require when a file is renamed."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
