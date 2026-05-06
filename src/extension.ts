@@ -53,12 +53,10 @@ export async function activate(context: vscode.ExtensionContext) {
   watcher.onDidDelete(reloadAndUpdate);
   context.subscriptions.push(watcher);
 
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeWorkspaceFolders(reloadAndUpdate)
-  );
+  context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(reloadAndUpdate));
 
   context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration(e => {
+    vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('luapathguard.autoUpdate')) {
         updateStatusBar();
       }
@@ -77,18 +75,18 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('luapathguard.enable', async () => {
-      await vscode.workspace.getConfiguration('luapathguard').update(
-        'autoUpdate', true, vscode.ConfigurationTarget.Workspace
-      );
+      await vscode.workspace
+        .getConfiguration('luapathguard')
+        .update('autoUpdate', true, vscode.ConfigurationTarget.Workspace);
       updateStatusBar();
     })
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand('luapathguard.disable', async () => {
-      await vscode.workspace.getConfiguration('luapathguard').update(
-        'autoUpdate', false, vscode.ConfigurationTarget.Workspace
-      );
+      await vscode.workspace
+        .getConfiguration('luapathguard')
+        .update('autoUpdate', false, vscode.ConfigurationTarget.Workspace);
       updateStatusBar();
     })
   );
