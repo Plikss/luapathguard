@@ -37,7 +37,7 @@ function MakePathMap(sourcemap: RojoProject): Record<string, string> {
 
 function ConvertPath(pathMap: Record<string, string>, filePath: string) {
   if (!pathMap || !filePath) {
-    console.log("Couldn't Map .project.json; ConvertPath");
+    vscode.window.showErrorMessage("LuaPathGuard: Couldn't read .project.json.");
     return;
   }
 
@@ -152,13 +152,13 @@ export async function ProcessEdits(content: RojoProject, event: any) {
     const newFilePath = ConvertPath(pathMap, file.newUri.fsPath);
     const oldFilePath = ConvertPath(pathMap, file.oldUri.fsPath);
     if (!newFilePath || !oldFilePath) {
-      console.log("Couldn't convert paths; workspace.onWillRenameFiles");
+      vscode.window.showWarningMessage("LuaPathGuard: Couldn't convert file path — skipping.");
       continue;
     }
 
     const Fetched = await FetchRequires(oldFilePath);
     if (Object.keys(Fetched).length === 0) {
-      console.log('No requires found for:', oldFilePath);
+      vscode.window.showInformationMessage(`LuaPathGuard: No requires found for ${oldFilePath}.`);
       continue;
     }
 

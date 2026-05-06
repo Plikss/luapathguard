@@ -11,7 +11,7 @@ function getAutoUpdate(): boolean {
 async function loadSourcemap(): Promise<RojoProject | undefined> {
   const sourcemap = await FetchSourceMap();
   if (sourcemap.length === 0) {
-    console.log('Cannot find sourcemap!');
+    vscode.window.showWarningMessage('LuaPathGuard: No Rojo project file found.');
     return undefined;
   }
   const bytes = await vscode.workspace.fs.readFile(sourcemap[0]);
@@ -97,7 +97,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onWillRenameFiles((event) => {
       if (!getAutoUpdate()) return;
       if (!content) {
-        console.log("couldn't parse sourcemap");
+        vscode.window.showWarningMessage("LuaPathGuard: Couldn't parse source map.");
         return;
       }
       event.waitUntil(ProcessEdits(content, event));

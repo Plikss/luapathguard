@@ -2,10 +2,12 @@
   "name": "luapathguard",
   "displayName": "LuaPathGuard",
   "description": "Automatically fixing require path when moving scripts",
+  "publisher": "Plikss",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.118.0"
   },
+  "license": "MIT",
   "categories": [
     "Other"
   ],
