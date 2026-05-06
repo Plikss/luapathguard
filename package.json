@@ -7,7 +7,7 @@
     "url": "https://github.com/Plikss/luapathguard"
   },
   "publisher": "plikss",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.118.0"
   },
@@ -59,6 +59,16 @@
           "type": "boolean",
           "default": true,
           "description": "Also rename the local variable that holds the require when a file is renamed."
+        },
+        "luapathguard.autoSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save files after updating require paths."
+        },
+        "luapathguard.openChangedFiles": {
+          "type": "boolean",
+          "default": false,
+          "description": "Open files in the editor after their require paths are updated."
         }
       }
     }

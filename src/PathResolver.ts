@@ -147,6 +147,8 @@ async function renameSymbolInFile(
 export async function ProcessEdits(content: RojoProject, event: any) {
   const pathMap = MakePathMap(content);
   const renameVar = getConfig().get<boolean>('renameRequireVariable', true);
+  const autoSave = getConfig().get<boolean>('autoSave', true);
+  const openChangedFiles = getConfig().get<boolean>('openChangedFiles', false);
 
   for (const file of event.files) {
     const newFilePath = ConvertPath(pathMap, file.newUri.fsPath);
@@ -190,6 +192,14 @@ export async function ProcessEdits(content: RojoProject, event: any) {
 
       if (renameVar && oldName !== newName) {
         await renameSymbolInFile(document, srcFilePath, oldName, newName);
+      }
+
+      if (autoSave) {
+        await document.save();
+      }
+
+      if (openChangedFiles) {
+        await vscode.window.showTextDocument(document, { preview: false, preserveFocus: true });
       }
     }
   }
