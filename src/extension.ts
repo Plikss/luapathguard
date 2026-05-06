@@ -93,7 +93,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.workspace.onWillRenameFiles((event) => {
-      if (!getAutoUpdate()) return;
+      if (!getAutoUpdate()) {return;}
       if (!content) {
         vscode.window.showWarningMessage("LuaPathGuard: Couldn't parse source map.");
         return;

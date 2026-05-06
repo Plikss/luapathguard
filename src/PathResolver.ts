@@ -22,7 +22,7 @@ function MakePathMap(sourcemap: RojoProject): Record<string, string> {
 
   function traverse(node: ProjectNode, rbxPath: string) {
     for (const [key, value] of Object.entries(node)) {
-      if (key.startsWith('$') || typeof value !== 'object' || value === null) continue;
+      if (key.startsWith('$') || typeof value !== 'object' || value === null) {continue;}
       const childPath = rbxPath ? `${rbxPath}.${key}` : key;
       if (value.$path) {
         pathMap[childPath] = value.$path;
@@ -49,7 +49,7 @@ function ConvertPath(pathMap: Record<string, string>, filePath: string) {
     }
 
     const index = filePath.lastIndexOf(newFsPath);
-    if (index === -1) continue;
+    if (index === -1) {continue;}
 
     let convertedPath: string = filePath.slice(index);
     convertedPath = convertedPath.replace(newFsPath, rbxPath).replaceAll('\\', '.');
@@ -84,9 +84,9 @@ async function FetchRequires(key: string): Promise<Record<string, number[]>> {
     const lines = text.split('\n');
     const hits: number[] = [];
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes(key)) hits.push(i);
+      if (lines[i].includes(key)) {hits.push(i);}
     }
-    if (hits.length > 0) output[fileUri.fsPath] = hits;
+    if (hits.length > 0) {output[fileUri.fsPath] = hits;}
   }));
 
   return output;
@@ -113,7 +113,7 @@ async function searchKeywordInFile(
   keyword: string
 ): Promise<boolean> {
   for (let i = 0; i < document.lineCount; i++) {
-    if (document.lineAt(i).text.includes(keyword)) return true;
+    if (document.lineAt(i).text.includes(keyword)) {return true;}
   }
   return false;
 }
@@ -177,7 +177,7 @@ export async function ProcessEdits(content: RojoProject, event: any) {
 
       for (const lineNumber of lineNumbers) {
         const lineText = await getLine(document, lineNumber);
-        if (!lineText) continue;
+        if (!lineText) {continue;}
 
         const newLine = lineText.replace(oldFilePath, newFilePath);
 
